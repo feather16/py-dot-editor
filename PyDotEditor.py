@@ -1,19 +1,29 @@
 import os
 import tkinter as tk
-from tkinter import Button, filedialog
-from tkinter import messagebox
-from PIL import Image
+from tkinter import Button, filedialog, messagebox
+from PIL import Image, ImageTk
 import numpy as np
 from enum import Enum
 
 TITLE = 'PyDotEditor'
 VERSION: str = '1.0'
 
+def get_active_image(image: Image) -> Image:
+    new_image: Image = image.copy()
+    size = new_image.size
+    for x in range(size[0]):
+        for y in range(size[1]):
+            r ,g, b, a = image.getpixel((x, y))
+            if a == 0:
+                r, g, b, a = 160, 224, 255, 255
+            new_image.putpixel((x, y),(r, g, b, a))
+    return new_image
+
 class GUI(tk.Frame):
     class Mode(Enum):
         PEN = 1
         FILL = 2
-    NAME_TO_MODE: dict = {
+    NAME_TO_MODE: dict[str, Mode] = {
         'pen': Mode.PEN,
         'fill': Mode.FILL
     }
@@ -30,6 +40,9 @@ class GUI(tk.Frame):
         ]
         self.EXTS = ['.bmp', '.png', '.jpg', '.tif']
         self.DEFAULT_EXT = '.png'
+
+        self.PEN_ICON_PATH = os.path.dirname(__file__) + '/image/icon_pen.png'
+        self.FILL_ICON_PATH = os.path.dirname(__file__) + '/image/icon_fill.png'
 
         # 変数
         self.width: int = 512
@@ -51,14 +64,25 @@ class GUI(tk.Frame):
         self.update_all_pixels()
         self.main_canvas.place(x=0, y=self.UPPER_SPACE)
         self.main_canvas.pack(fill=tk.BOTH, expand=True)
+
+        # ボタンのアイコン
+        pen_icon_image = Image.open(self.PEN_ICON_PATH)
+        pen_icon_image = pen_icon_image.resize((20, 20))
+        self.pen_icon = ImageTk.PhotoImage(pen_icon_image)
+        pen_icon_image_active = get_active_image(pen_icon_image)
+        self.pen_icon_active = ImageTk.PhotoImage(pen_icon_image_active)
+
+        fill_icon_image = Image.open(self.FILL_ICON_PATH)
+        fill_icon_image = fill_icon_image.resize((20, 20))
+        self.fill_icon = ImageTk.PhotoImage(fill_icon_image)
         
         # ボタン
-        #button1 = tk.Button(self.tk_root, text='Pen', command=lambda: self.on_switch_button('pen'))
-        #button1.pack()
-        #button1.place(x=20, y=20)
-        #button2 = tk.Button(self.tk_root, text='Fill', command=lambda: self.on_switch_button('fill'))
-        #button2.pack()
-        #button2.place(x=60, y=20)
+        #self.pen_button = tk.Button(self.tk_root, text='Pen', command=lambda: self.on_switch_button('pen'), image=self.pen_icon_active)
+        #self.pen_button.pack()
+        #self.pen_button.place(x=20, y=20)
+        #self.fill_button = tk.Button(self.tk_root, text='Fill', command=lambda: self.on_switch_button('fill'), image=self.fill_icon)
+        #self.fill_button.pack()
+        #self.fill_button.place(x=60, y=20)
 
         # メニュー
         menubar = tk.Menu(self.tk_root)
@@ -145,7 +169,12 @@ class GUI(tk.Frame):
         self.save_file()
 
     def on_switch_button(self, name: str) -> None:
+        mode_prev = self.mode
         self.mode = self.NAME_TO_MODE[name]
+        if mode_prev != self.Mode.PEN and self.mode == self.Mode.PEN:
+            self.pen_button.config(image=self.pen_icon_active)
+        elif mode_prev != self.Mode.FILL and self.mode == self.Mode.FILL:
+            self.pen_button.config(image=self.pen_icon)
 
     def update_title(self) -> None:
         appname = '{} ver.{}'.format(TITLE, VERSION)
