@@ -47,6 +47,14 @@ class GUI(tk.Frame):
         self.PEN_ICON_PATH = os.path.dirname(__file__) + '/image/icon_pen.png'
         self.FILL_ICON_PATH = os.path.dirname(__file__) + '/image/icon_fill.png'
 
+        COLORS: list[tuple[int, int, int]] = [
+            (  0,   0,   0), # 黒
+            (255, 255, 255), # 白
+            (255,   0,   0), # 赤
+            (  0, 255,   0), # 緑
+            (  0,   0, 255), # 青
+        ]
+
         # 変数
         self.width: int = 512
         self.height: int = 512 + self.UPPER_SPACE
@@ -85,7 +93,6 @@ class GUI(tk.Frame):
         self.pen_icon = ImageTk.PhotoImage(pen_icon_image)
         pen_icon_image_active = get_active_image(pen_icon_image)
         self.pen_icon_active = ImageTk.PhotoImage(pen_icon_image_active)
-
         fill_icon_image = Image.open(self.FILL_ICON_PATH)
         fill_icon_image = fill_icon_image.resize((20, 20))
         self.fill_icon = ImageTk.PhotoImage(fill_icon_image)
@@ -99,6 +106,22 @@ class GUI(tk.Frame):
         self.fill_button = tk.Button(self.tk_root, text='Fill', command=lambda: self.on_switch_button('fill'), image=self.fill_icon)
         self.fill_button.pack()
         self.fill_button.place(x=60, y=20)
+
+        # 色変更ボタン
+        self.color_buttons: list[tk.Button] = []
+        self.virtual_pixel = tk.PhotoImage(width=1, height=1)
+        for i, color in enumerate(COLORS):
+            button = tk.Button(
+                self.tk_root, 
+                bg='#{:02x}{:02x}{:02x}'.format(*color),
+                width=20,
+                height=20,
+                image=self.virtual_pixel,
+            )
+            button.config(command=(lambda c: (lambda: self.set_color(c)))(color))
+            button.pack()
+            button.place(x=180+i*32, y=20)
+            self.color_buttons.append(button)
         
         # メニュー
         menubar = tk.Menu(self.tk_root)
@@ -288,7 +311,7 @@ class GUI(tk.Frame):
     @property
     def rect_size(self) -> float:
         return min(self.width / self.image_size[0], (self.height - self.UPPER_SPACE) / self.image_size[1])
-    
+
     def set_color(self, color: np.ndarray) -> None:
         self.color = color[:3]
         color_code: str = '#{:02x}{:02x}{:02x}'.format(*self.color)
