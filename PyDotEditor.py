@@ -54,6 +54,7 @@ class GUI(tk.Frame):
         self.path: str = ''
         self.dragging: bool = False
         self.mode: GUI.Mode = GUI.Mode.PEN
+        self.color: np.ndarray = np.full((3,), 0)
 
         # 初期化
         super().__init__(tk_root)
@@ -156,7 +157,7 @@ class GUI(tk.Frame):
         '''
         if self.coord_inside_image(x, y):      
             i, j = self.coord_to_indices(x, y)
-            self.pixel[i][j] = 0, 0, 0, 255
+            self.pixel[i][j] = np.concatenate([self.color, [255]])
             self.update_pixel(i, j)
             return True
         else:
@@ -177,7 +178,7 @@ class GUI(tk.Frame):
                     not drawn[m][n] and \
                     np.all(self.pixel[m][n] == base_color):
 
-                    self.pixel[m][n] = 0, 0, 0, 255
+                    self.pixel[m][n] = np.concatenate([self.color, [255]])
                     self.update_pixel(m, n)
                     drawn[m][n] = True
                     _try_draw(m + 1, n)
