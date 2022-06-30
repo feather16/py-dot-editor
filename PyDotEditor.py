@@ -54,8 +54,8 @@ class GUI(tk.Frame):
         self.path: str = ''
         self.dragging: bool = False
         self.mode: GUI.Mode = GUI.Mode.PEN
-        self.color: np.ndarray = np.full((3,), 0)
-
+        self.color: np.ndarray = np.zeros((3,), dtype=int)
+        
         # 初期化
         super().__init__(tk_root)
         self.tk_root: tk.Tk = tk_root
@@ -66,8 +66,18 @@ class GUI(tk.Frame):
         # キャンバス
         self.main_canvas = tk.Canvas(self.tk_root, width=self.width, height=self.height)
         self.update_all_pixels()
-        self.main_canvas.place(x=0, y=self.UPPER_SPACE)
+        self.main_canvas.place(x=0, y=0)
         self.main_canvas.pack(fill=tk.BOTH, expand=True)
+        self.set_color(np.zeros((3,), dtype=int))
+
+        # ラベル
+        self.current_color_label = tk.Label(
+            self.tk_root, 
+            text='Color',
+            font=("Arial", 12)
+        )
+        self.current_color_label.pack()
+        self.current_color_label.place(x=114, y=55)
 
         # ボタンのアイコン
         pen_icon_image = Image.open(self.PEN_ICON_PATH)
@@ -89,7 +99,7 @@ class GUI(tk.Frame):
         self.fill_button = tk.Button(self.tk_root, text='Fill', command=lambda: self.on_switch_button('fill'), image=self.fill_icon)
         self.fill_button.pack()
         self.fill_button.place(x=60, y=20)
-
+        
         # メニュー
         menubar = tk.Menu(self.tk_root)
         self.tk_root.config(menu=menubar)
@@ -278,6 +288,18 @@ class GUI(tk.Frame):
     @property
     def rect_size(self) -> float:
         return min(self.width / self.image_size[0], (self.height - self.UPPER_SPACE) / self.image_size[1])
+    
+    def set_color(self, color: np.ndarray) -> None:
+        self.color = color[:3]
+        color_code: str = '#{:02x}{:02x}{:02x}'.format(*self.color)
+        self.main_canvas.create_rectangle(
+            120,
+            20,
+            150,
+            50,
+            fill=color_code,
+            tags='current_color'
+        )
         
 if __name__ == '__main__':
     tk_root = tk.Tk()
