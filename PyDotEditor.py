@@ -9,6 +9,9 @@ TITLE = 'PyDotEditor'
 VERSION: str = '1.0'
 
 def get_active_image(image: Image) -> Image:
+    '''
+    アイコン(pen, fill)の画像を選択状態にする
+    '''
     new_image: Image = image.copy()
     size = new_image.size
     for x in range(size[0]):
@@ -75,14 +78,16 @@ class GUI(tk.Frame):
         fill_icon_image = Image.open(self.FILL_ICON_PATH)
         fill_icon_image = fill_icon_image.resize((20, 20))
         self.fill_icon = ImageTk.PhotoImage(fill_icon_image)
+        fill_icon_image_active = get_active_image(fill_icon_image)
+        self.fill_icon_active = ImageTk.PhotoImage(fill_icon_image_active)
         
         # ボタン
-        #self.pen_button = tk.Button(self.tk_root, text='Pen', command=lambda: self.on_switch_button('pen'), image=self.pen_icon_active)
-        #self.pen_button.pack()
-        #self.pen_button.place(x=20, y=20)
-        #self.fill_button = tk.Button(self.tk_root, text='Fill', command=lambda: self.on_switch_button('fill'), image=self.fill_icon)
-        #self.fill_button.pack()
-        #self.fill_button.place(x=60, y=20)
+        self.pen_button = tk.Button(self.tk_root, text='Pen', command=lambda: self.on_switch_button('pen'), image=self.pen_icon_active)
+        self.pen_button.pack()
+        self.pen_button.place(x=20, y=20)
+        self.fill_button = tk.Button(self.tk_root, text='Fill', command=lambda: self.on_switch_button('fill'), image=self.fill_icon)
+        self.fill_button.pack()
+        self.fill_button.place(x=60, y=20)
 
         # メニュー
         menubar = tk.Menu(self.tk_root)
@@ -121,12 +126,24 @@ class GUI(tk.Frame):
             self.update_all_pixels()
 
     def on_button(self, event: tk.Event) -> None:
-        if event.num == 1:
+        '''
+        画面がクリック(押されたとき)
+        '''
+        if event.num == 1: # 左クリック
             self.dragging = True
-            self.try_draw(event.x, event.y)
+            if self.mode == self.Mode.PEN:
+                self.try_draw(event.x, event.y)
+            elif self.mode == self.Mode.FILL:
+                self.try_fill(event.x, event.y)
+            else:
+                raise NotImplementedError
+            
 
     def on_button_release(self, event: tk.Event) -> None:
-        if event.num == 1:
+        '''
+        画面がクリック(離されたとき)
+        '''
+        if event.num == 1: # 左クリック
             self.dragging = False
 
     def on_motion(self, event: tk.Event) -> None:
@@ -134,10 +151,40 @@ class GUI(tk.Frame):
             self.try_draw(event.x, event.y)
 
     def try_draw(self, x: float, y: float) -> bool:
+        '''
+        画面上の座標(`x`, `y`)に対して、可能であれば対応するピクセルを塗りつぶす
+        '''
         if self.coord_inside_image(x, y):      
             i, j = self.coord_to_indices(x, y)
             self.pixel[i][j] = 0, 0, 0, 255
             self.update_pixel(i, j)
+            return True
+        else:
+            return False
+
+    def try_fill(self, x: float, y: float) -> bool:
+        '''
+        画面上の座標(`x`, `y`)に対して、可能であれば対応するピクセルをベースとしてfill操作を実行
+        '''
+        if self.coord_inside_image(x, y):      
+            i, j = self.coord_to_indices(x, y)
+            base_color: np.ndarray = np.copy(self.pixel[i][j]) # shape: (4,)
+            drawn: np.ndarray = np.full(self.image_size, False)
+            def _try_draw(m: int, n: int) -> None:
+                if \
+                    0 <= m < self.image_size[0] and \
+                    0 <= n < self.image_size[1] and \
+                    not drawn[m][n] and \
+                    np.all(self.pixel[m][n] == base_color):
+
+                    self.pixel[m][n] = 0, 0, 0, 255
+                    self.update_pixel(m, n)
+                    drawn[m][n] = True
+                    _try_draw(m + 1, n)
+                    _try_draw(m - 1, n)
+                    _try_draw(m, n + 1)
+                    _try_draw(m, n - 1)
+            _try_draw(i, j)
             return True
         else:
             return False
@@ -169,12 +216,17 @@ class GUI(tk.Frame):
         self.save_file()
 
     def on_switch_button(self, name: str) -> None:
+        '''
+        モード変更ボタンが押されたとき
+        '''
         mode_prev = self.mode
         self.mode = self.NAME_TO_MODE[name]
         if mode_prev != self.Mode.PEN and self.mode == self.Mode.PEN:
             self.pen_button.config(image=self.pen_icon_active)
+            self.fill_button.config(image=self.fill_icon)
         elif mode_prev != self.Mode.FILL and self.mode == self.Mode.FILL:
             self.pen_button.config(image=self.pen_icon)
+            self.fill_button.config(image=self.fill_icon_active)
 
     def update_title(self) -> None:
         appname = '{} ver.{}'.format(TITLE, VERSION)
@@ -190,14 +242,17 @@ class GUI(tk.Frame):
                 self.update_pixel(i, j)
     
     def update_pixel(self, i: int, j: int) -> None:
-        fill: str = '#{:02x}{:02x}{:02x}'.format(*self.pixel[i][j][:3])
+        '''
+        画面上のピクセルを更新
+        '''
+        color_code: str = '#{:02x}{:02x}{:02x}'.format(*self.pixel[i][j][:3])
         coord: tuple = self.indices_to_coord(i, j)
         self.main_canvas.create_rectangle(
             coord[0],
             coord[1], 
             coord[0] + self.rect_size, 
             coord[1] + self.rect_size,
-            fill=fill, 
+            fill=color_code, 
             outline='white', tags='pixel')
 
     def indices_to_coord(self, i: int, j: int) -> tuple:
@@ -216,7 +271,7 @@ class GUI(tk.Frame):
 
     # 編集対象の画像のサイズ
     @property
-    def image_size(self) -> tuple:
+    def image_size(self) -> tuple[int, int]:
         return self.pixel.shape[:2]
 
     @property
