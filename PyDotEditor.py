@@ -47,17 +47,22 @@ class GUI(tk.Frame):
         self.PEN_ICON_PATH = os.path.dirname(__file__) + '/image/icon_pen.png'
         self.FILL_ICON_PATH = os.path.dirname(__file__) + '/image/icon_fill.png'
 
-        COLORS: list[tuple[int, int, int]] = [
-            (  0,   0,   0), # 黒
-            (255, 255, 255), # 白
-            (255,   0,   0), # 赤
-            (255, 127,   0), # 橙
-            (255, 255,   0), # 黄
-            (  0, 255,   0), # 緑
-            (  0, 255, 255), # 水
-            (  0,   0, 255), # 青
-            (255,   0, 255), # 桃
-        ]
+        COLOR_TO_RGB: dict[str, tuple[int, int, int]] = {
+            '黒': (  0,   0,   0),
+            '白': (255, 255, 255),
+            '赤': (255,   0,   0),
+            '橙': (255, 127,   0),
+            '黄': (255, 255,   0),
+            '緑': (  0, 255,   0),
+            '水': (  0, 255, 255),
+            '青': (  0,   0, 255),
+            '桃': (255,   0, 255),
+        }
+        COLORS: list[str] = ['黒', '白', '赤', '橙', '黄', '緑', '水', '青', '桃']
+
+        colors_rgb: list[tuple[int, int, int]] = []
+        for color in COLORS:
+            colors_rgb.append(COLOR_TO_RGB[color])
 
         # 変数
         self.width: int = 512
@@ -114,7 +119,7 @@ class GUI(tk.Frame):
         # 色変更ボタン
         self.color_buttons: list[tk.Button] = []
         self.virtual_pixel = tk.PhotoImage(width=1, height=1)
-        for i, color in enumerate(COLORS):
+        for i, color in enumerate(colors_rgb):
             button = tk.Button(
                 self.tk_root, 
                 bg='#{:02x}{:02x}{:02x}'.format(*color),
