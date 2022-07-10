@@ -44,8 +44,10 @@ class GUI(tk.Frame):
         self.EXTS = ['.bmp', '.png', '.jpg', '.tif']
         self.DEFAULT_EXT = '.png'
 
-        self.PEN_ICON_PATH = os.path.dirname(__file__) + '/image/icon_pen.png'
-        self.FILL_ICON_PATH = os.path.dirname(__file__) + '/image/icon_fill.png'
+        #self.PEN_ICON_PATH = os.path.dirname(__file__) + '/image/icon_pen.png'
+        #self.FILL_ICON_PATH = os.path.dirname(__file__) + '/image/icon_fill.png'
+        self.PEN_ICON_PATH = 'image/icon_pen.png'
+        self.FILL_ICON_PATH = 'image/icon_fill.png'
 
         COLOR_TO_RGB: dict[str, tuple[int, int, int]] = {
             '黒': (  0,   0,   0),
