@@ -16,7 +16,7 @@ def get_active_image(image: Image) -> Image:
     size = new_image.size
     for x in range(size[0]):
         for y in range(size[1]):
-            r ,g, b, a = image.getpixel((x, y))
+            r, g, b, a = image.getpixel((x, y))
             if a == 0:
                 r, g, b, a = 160, 224, 255, 255
             new_image.putpixel((x, y),(r, g, b, a))
